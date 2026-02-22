@@ -1,18 +1,27 @@
-import { User } from 'src/modules/users/entities/user.entity';
+// board.entity.ts
 import {
-    Entity,
-    PrimaryGeneratedColumn,
     Column,
     CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
+    DeleteDateColumn,
+    Entity,
     JoinColumn,
+    ManyToOne,
     OneToMany,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm';
+import { User } from 'src/modules/users/entities/user.entity';
 import { BoardMember } from './board-member.entity';
+import { Post } from 'src/modules/posts/post.entity';
+
+export enum BoardVisibility {
+    PRIVATE = 'private',
+    PUBLIC = 'public',
+}
 
 @Entity({ name: 'boards' })
 export class Board {
+
     @PrimaryGeneratedColumn()
     id!: number;
 
@@ -22,18 +31,22 @@ export class Board {
     @Column({ type: 'text' })
     description!: string;
 
-    @Column({ type: 'varchar', length: 20 })
-    visibility!: 'private' | 'public';
+    @Column({ type: 'enum', enum: BoardVisibility, default: BoardVisibility.PUBLIC })
+    visibility!: BoardVisibility;
 
-    @ManyToOne(() => User, (user) => user.boards, { nullable: false })
+    // ─── Relations ────────────────────────────────────────────
+
+    @ManyToOne(() => User, user => user.boards, { nullable: false, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'created_by' })
     createdBy!: User;
 
-    @OneToMany(() => BoardMember, (boardMember) => boardMember.board)
+    @OneToMany(() => BoardMember, boardMember => boardMember.board)
     members!: BoardMember[];
 
-    @Column({ name: 'created_by', type: 'int' })
-    createdById!: number;
+    @OneToMany(() => Post, post => post.board)
+    posts!: Post[];
+
+    // ─── Timestamps ───────────────────────────────────────────
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt!: Date;
@@ -41,6 +54,6 @@ export class Board {
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt!: Date;
 
-    @Column({ name: 'deleted_at', type: 'timestamp', nullable: true })
+    @DeleteDateColumn({ name: 'deleted_at' })
     deletedAt?: Date;
 }
